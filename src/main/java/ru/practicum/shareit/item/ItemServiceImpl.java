@@ -1,6 +1,8 @@
 package ru.practicum.shareit.item;
 
 import org.springframework.stereotype.Service;
+import ru.practicum.shareit.exception.ForbiddenException;
+import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemMapper;
 import ru.practicum.shareit.item.model.Item;
@@ -26,14 +28,13 @@ public class ItemServiceImpl implements ItemService {
     public ItemDto addItem(ItemDto itemDto, Long ownerId) {
         User owner = userRepository.findById(ownerId);
         if (owner == null) {
-            throw new IllegalArgumentException("Пользователь не найден");
+            throw new NotFoundException("Пользователь не найден");
         }
-
         Item item = new Item();
         item.setId(idGenerator.getAndIncrement());
         item.setName(itemDto.getName());
         item.setDescription(itemDto.getDescription());
-        item.setAvailable(itemDto.isAvailable());
+        item.setAvailable(itemDto.getAvailable());
         item.setOwner(owner);
         itemStorage.put(item.getId(), item);
         return ItemMapper.toItemDto(item);
@@ -43,11 +44,10 @@ public class ItemServiceImpl implements ItemService {
     public ItemDto updateItem(Long itemId, ItemDto itemDto, Long ownerId) {
         Item item = itemStorage.get(itemId);
         if (item == null) {
-            throw new NoSuchElementException("Вещь не найдена");
+            throw new NotFoundException("Вещь не найдена");
         }
-
         if (!item.getOwner().getId().equals(ownerId)) {
-            throw new IllegalArgumentException("Изменять вещь может только её владелец");
+            throw new ForbiddenException("Изменять вещь может только её владелец");
         }
         if (itemDto.getName() != null) {
             item.setName(itemDto.getName());
@@ -55,8 +55,9 @@ public class ItemServiceImpl implements ItemService {
         if (itemDto.getDescription() != null) {
             item.setDescription(itemDto.getDescription());
         }
-
-        item.setAvailable(itemDto.isAvailable());
+        if (itemDto.getAvailable() != null) {
+            item.setAvailable(itemDto.getAvailable());
+        }
         return ItemMapper.toItemDto(item);
     }
 
@@ -64,7 +65,7 @@ public class ItemServiceImpl implements ItemService {
     public ItemDto getItemById(Long itemId, Long requesterId) {
         Item item = itemStorage.get(itemId);
         if (item == null) {
-            throw new NoSuchElementException("Вещь не найдена");
+            throw new NotFoundException("Вещь не найдена");
         }
         return ItemMapper.toItemDto(item);
     }

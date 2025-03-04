@@ -1,5 +1,6 @@
 package ru.practicum.shareit.item;
 
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.item.dto.ItemDto;
 
@@ -11,14 +12,13 @@ public class ItemController {
 
     private final ItemService itemService;
 
-    // Конструктор для внедрения сервиса
     public ItemController(ItemService itemService) {
         this.itemService = itemService;
     }
 
     // Добавление новой вещи
     @PostMapping
-    public ItemDto addItem(@RequestBody ItemDto itemDto,
+    public ItemDto addItem(@Valid @RequestBody ItemDto itemDto,
                            @RequestHeader("X-Sharer-User-Id") Long ownerId) {
         return itemService.addItem(itemDto, ownerId);
     }

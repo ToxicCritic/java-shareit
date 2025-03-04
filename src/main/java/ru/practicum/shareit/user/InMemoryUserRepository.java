@@ -1,7 +1,7 @@
 package ru.practicum.shareit.user;
 
 import org.springframework.stereotype.Repository;
-
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,7 +14,18 @@ public class InMemoryUserRepository implements UserRepository {
         return userStorage.get(id);
     }
 
+    @Override
     public void save(User user) {
         userStorage.put(user.getId(), user);
+    }
+
+    @Override
+    public Collection<User> findAll() {
+        return userStorage.values();
+    }
+
+    @Override
+    public void delete(Long id) {
+        userStorage.remove(id);
     }
 }
