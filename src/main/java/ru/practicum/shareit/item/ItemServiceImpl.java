@@ -8,19 +8,17 @@ import ru.practicum.shareit.item.dto.ItemMapper;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.UserRepository;
-
-import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.Collection;
 import java.util.stream.Collectors;
 
 @Service
 public class ItemServiceImpl implements ItemService {
 
-    private final Map<Long, Item> itemStorage = new HashMap<>();
-    private final AtomicLong idGenerator = new AtomicLong(1);
+    private final ItemRepository itemRepository;
     private final UserRepository userRepository;
 
-    public ItemServiceImpl(UserRepository userRepository) {
+    public ItemServiceImpl(ItemRepository itemRepository, UserRepository userRepository) {
+        this.itemRepository = itemRepository;
         this.userRepository = userRepository;
     }
 
@@ -31,18 +29,17 @@ public class ItemServiceImpl implements ItemService {
             throw new NotFoundException("Пользователь не найден");
         }
         Item item = new Item();
-        item.setId(idGenerator.getAndIncrement());
         item.setName(itemDto.getName());
         item.setDescription(itemDto.getDescription());
         item.setAvailable(itemDto.getAvailable());
         item.setOwner(owner);
-        itemStorage.put(item.getId(), item);
-        return ItemMapper.toItemDto(item);
+        itemRepository.save(item);
+        return ItemMapper.toDto(item);
     }
 
     @Override
     public ItemDto updateItem(Long itemId, ItemDto itemDto, Long ownerId) {
-        Item item = itemStorage.get(itemId);
+        Item item = itemRepository.findById(itemId);
         if (item == null) {
             throw new NotFoundException("Вещь не найдена");
         }
@@ -58,37 +55,40 @@ public class ItemServiceImpl implements ItemService {
         if (itemDto.getAvailable() != null) {
             item.setAvailable(itemDto.getAvailable());
         }
-        return ItemMapper.toItemDto(item);
+        itemRepository.save(item);
+        return ItemMapper.toDto(item);
     }
 
     @Override
     public ItemDto getItemById(Long itemId, Long requesterId) {
-        Item item = itemStorage.get(itemId);
+        Item item = itemRepository.findById(itemId);
         if (item == null) {
             throw new NotFoundException("Вещь не найдена");
         }
-        return ItemMapper.toItemDto(item);
+        return ItemMapper.toDto(item);
     }
 
     @Override
-    public List<ItemDto> getItemsByOwner(Long ownerId) {
-        return itemStorage.values().stream()
+    public java.util.List<ItemDto> getItemsByOwner(Long ownerId) {
+        Collection<Item> items = itemRepository.findAll();
+        return items.stream()
                 .filter(item -> item.getOwner().getId().equals(ownerId))
-                .map(ItemMapper::toItemDto)
+                .map(ItemMapper::toDto)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<ItemDto> searchItems(String text) {
+    public java.util.List<ItemDto> searchItems(String text) {
         if (text == null || text.isEmpty()) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
         String lowerText = text.toLowerCase();
-        return itemStorage.values().stream()
+        Collection<Item> items = itemRepository.findAll();
+        return items.stream()
                 .filter(item -> item.isAvailable() &&
                                 (item.getName().toLowerCase().contains(lowerText) ||
                                  item.getDescription().toLowerCase().contains(lowerText)))
-                .map(ItemMapper::toItemDto)
+                .map(ItemMapper::toDto)
                 .collect(Collectors.toList());
     }
 }
