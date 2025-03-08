@@ -6,14 +6,13 @@ import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.dto.UserMapper;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final AtomicLong idGenerator = new AtomicLong(1);
 
     public UserServiceImpl(UserRepository userRepository) {
         this.userRepository = userRepository;
@@ -21,18 +20,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto addUser(UserDto userDto) {
-        List<User> users = userRepository.findAll().stream().collect(Collectors.toList());
-        for (User user : users) {
-            if (user.getEmail().equalsIgnoreCase(userDto.getEmail())) {
-                throw new DuplicateEmailException("Пользователь с таким email уже существует");
-            }
+        if (userDto.getEmail() != null && userRepository.findUserByEmail(userDto.getEmail()).isPresent()) {
+            throw new DuplicateEmailException("Пользователь с таким email уже существует");
         }
         User user = new User();
-        user.setId(idGenerator.getAndIncrement());
         user.setName(userDto.getName());
         user.setEmail(userDto.getEmail());
         userRepository.save(user);
-        return UserMapper.toUserDto(user);
+        return UserMapper.toDto(user);
     }
 
     @Override
@@ -45,16 +40,14 @@ public class UserServiceImpl implements UserService {
             user.setName(userDto.getName());
         }
         if (userDto.getEmail() != null && !userDto.getEmail().equalsIgnoreCase(user.getEmail())) {
-            List<User> users = userRepository.findAll().stream().collect(Collectors.toList());
-            for (User u : users) {
-                if (u.getEmail().equalsIgnoreCase(userDto.getEmail())) {
-                    throw new DuplicateEmailException("Пользователь с таким email уже существует");
-                }
+            Optional<User> duplicate = userRepository.findUserByEmail(userDto.getEmail());
+            if (duplicate.isPresent() && !duplicate.get().getId().equals(userId)) {
+                throw new DuplicateEmailException("Пользователь с таким email уже существует");
             }
             user.setEmail(userDto.getEmail());
         }
         userRepository.save(user);
-        return UserMapper.toUserDto(user);
+        return UserMapper.toDto(user);
     }
 
     @Override
@@ -63,13 +56,13 @@ public class UserServiceImpl implements UserService {
         if (user == null) {
             throw new NoSuchElementException("Пользователь не найден");
         }
-        return UserMapper.toUserDto(user);
+        return UserMapper.toDto(user);
     }
 
     @Override
     public List<UserDto> getUsers() {
         return userRepository.findAll().stream()
-                .map(UserMapper::toUserDto)
+                .map(UserMapper::toDto)
                 .collect(Collectors.toList());
     }
 
