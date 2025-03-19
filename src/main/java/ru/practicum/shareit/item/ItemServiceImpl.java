@@ -8,7 +8,7 @@ import ru.practicum.shareit.item.dto.ItemMapper;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.UserRepository;
-import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,10 +24,8 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public ItemDto addItem(ItemDto itemDto, Long ownerId) {
-        User owner = userRepository.findById(ownerId);
-        if (owner == null) {
-            throw new NotFoundException("Пользователь не найден");
-        }
+        User owner = userRepository.findById(ownerId)
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
         Item item = new Item();
         item.setName(itemDto.getName());
         item.setDescription(itemDto.getDescription());
@@ -39,10 +37,8 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public ItemDto updateItem(Long itemId, ItemDto itemDto, Long ownerId) {
-        Item item = itemRepository.findById(itemId);
-        if (item == null) {
-            throw new NotFoundException("Вещь не найдена");
-        }
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new NotFoundException("Вещь не найдена"));
         if (!item.getOwner().getId().equals(ownerId)) {
             throw new ForbiddenException("Изменять вещь может только её владелец");
         }
@@ -61,30 +57,25 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public ItemDto getItemById(Long itemId, Long requesterId) {
-        Item item = itemRepository.findById(itemId);
-        if (item == null) {
-            throw new NotFoundException("Вещь не найдена");
-        }
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new NotFoundException("Вещь не найдена"));
         return ItemMapper.toDto(item);
     }
 
     @Override
-    public java.util.List<ItemDto> getItemsByOwner(Long ownerId) {
-        Collection<Item> items = itemRepository.findAll();
-        return items.stream()
-                .filter(item -> item.getOwner().getId().equals(ownerId))
+    public List<ItemDto> getItemsByOwner(Long ownerId) {
+        return itemRepository.findByOwnerId(ownerId).stream()
                 .map(ItemMapper::toDto)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public java.util.List<ItemDto> searchItems(String text) {
+    public List<ItemDto> searchItems(String text) {
         if (text == null || text.isEmpty()) {
-            return java.util.Collections.emptyList();
+            return List.of();
         }
         String lowerText = text.toLowerCase();
-        Collection<Item> items = itemRepository.findAll();
-        return items.stream()
+        return itemRepository.findAll().stream()
                 .filter(item -> item.isAvailable() &&
                                 (item.getName().toLowerCase().contains(lowerText) ||
                                  item.getDescription().toLowerCase().contains(lowerText)))
