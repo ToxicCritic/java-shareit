@@ -2,11 +2,10 @@ package ru.practicum.shareit.item.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import ru.practicum.shareit.booking.dto.BookingShortDto;
+import java.util.List;
 
-@EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -15,8 +14,8 @@ public class ItemOwnerDto extends ItemDto {
     private BookingShortDto nextBooking;
 
     public ItemOwnerDto(Long id, String name, String description, Boolean available, Long requestId,
-                        BookingShortDto lastBooking, BookingShortDto nextBooking) {
-        super(id, name, description, available, requestId);
+                        List<CommentDto> comments, BookingShortDto lastBooking, BookingShortDto nextBooking) {
+        super(id, name, description, available, requestId, comments);
         this.lastBooking = lastBooking;
         this.nextBooking = nextBooking;
     }

@@ -1,5 +1,6 @@
 package ru.practicum.shareit.item;
 
+import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemOwnerDto;
 
@@ -15,4 +16,6 @@ public interface ItemService {
     List<ItemDto> getItemsByOwner(Long ownerId);
 
     List<ItemDto> searchItems(String text);
+
+    CommentDto addComment(Long itemId, Long userId, ru.practicum.shareit.item.dto.CommentDto commentDto);
 }
