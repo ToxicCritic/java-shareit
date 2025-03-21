@@ -35,8 +35,19 @@ public class BookingServiceImpl implements BookingService {
         if (item.getOwner().getId().equals(bookerId)) {
             throw new ForbiddenException("Владелец не может бронировать свою вещь");
         }
+        if (bookingDto.getStart().equals(bookingDto.getEnd())) {
+            throw new IllegalArgumentException("Время стартач не может быть равно времени окончания");
+        }
         if (bookingDto.getStart().isBefore(LocalDateTime.now()) || bookingDto.getEnd().isBefore(bookingDto.getStart())) {
             throw new IllegalArgumentException("Некорректные даты бронирования");
+        }
+        List<Booking> overlappingBookings = bookingRepository
+                .findByItemIdAndStatusIn(item.getId(), List.of(BookingStatus.APPROVED, BookingStatus.WAITING))
+                .stream()
+                .filter(b -> bookingDto.getStart().isBefore(b.getEnd()) && bookingDto.getEnd().isAfter(b.getStart()))
+                .toList();
+        if (!overlappingBookings.isEmpty()) {
+            throw new IllegalArgumentException("Вещь занята в указанное время");
         }
         bookingDto.setStatus(BookingStatus.WAITING);
         Booking booking = BookingMapper.toEntity(bookingDto, item, booker);
