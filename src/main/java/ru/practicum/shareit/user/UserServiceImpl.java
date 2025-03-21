@@ -32,10 +32,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto updateUser(Long userId, UserDto userDto) {
-        User user = userRepository.findById(userId);
-        if (user == null) {
-            throw new NoSuchElementException("Пользователь не найден");
-        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NoSuchElementException("Пользователь не найден"));
         if (userDto.getName() != null) {
             user.setName(userDto.getName());
         }
@@ -52,10 +50,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto getUser(Long userId) {
-        User user = userRepository.findById(userId);
-        if (user == null) {
-            throw new NoSuchElementException("Пользователь не найден");
-        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NoSuchElementException("Пользователь не найден"));
         return UserMapper.toDto(user);
     }
 
@@ -68,6 +64,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deleteUser(Long userId) {
-        userRepository.delete(userId);
+        userRepository.deleteById(userId);
     }
 }

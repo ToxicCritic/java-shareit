@@ -1,5 +1,7 @@
 package ru.practicum.shareit.item.dto;
 
+import java.util.List;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -18,4 +20,5 @@ public class ItemDto {
     @NotNull(message = "Поле available должно быть указано")
     private Boolean available;
     private Long requestId;
+    private List<CommentDto> comments;
 }
