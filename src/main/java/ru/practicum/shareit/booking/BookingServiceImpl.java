@@ -1,5 +1,6 @@
 package ru.practicum.shareit.booking;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingMapper;
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@RequiredArgsConstructor
 @Service
 public class BookingServiceImpl implements BookingService {
 
@@ -20,35 +22,18 @@ public class BookingServiceImpl implements BookingService {
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
 
-    public BookingServiceImpl(BookingRepository bookingRepository, ItemRepository itemRepository, UserRepository userRepository) {
-        this.bookingRepository = bookingRepository;
-        this.itemRepository = itemRepository;
-        this.userRepository = userRepository;
-    }
-
     @Override
     public BookingDto addBooking(BookingDto bookingDto, Long bookerId) {
-        User booker = userRepository.findById(bookerId)
-                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
-        Item item = itemRepository.findById(bookingDto.getItemId())
-                .orElseThrow(() -> new NotFoundException("Вещь не найдена"));
+        User booker = getUserById(bookerId);
+        Item item = getItemById(bookingDto.getItemId());
+        if (!item.isAvailable()) {
+            throw new IllegalArgumentException("Вещь недоступна для бронирования");
+        }
         if (item.getOwner().getId().equals(bookerId)) {
             throw new ForbiddenException("Владелец не может бронировать свою вещь");
         }
-        if (bookingDto.getStart().equals(bookingDto.getEnd())) {
-            throw new IllegalArgumentException("Время стартач не может быть равно времени окончания");
-        }
-        if (bookingDto.getStart().isBefore(LocalDateTime.now()) || bookingDto.getEnd().isBefore(bookingDto.getStart())) {
-            throw new IllegalArgumentException("Некорректные даты бронирования");
-        }
-        List<Booking> overlappingBookings = bookingRepository
-                .findByItemIdAndStatusIn(item.getId(), List.of(BookingStatus.APPROVED, BookingStatus.WAITING))
-                .stream()
-                .filter(b -> bookingDto.getStart().isBefore(b.getEnd()) && bookingDto.getEnd().isAfter(b.getStart()))
-                .toList();
-        if (!overlappingBookings.isEmpty()) {
-            throw new IllegalArgumentException("Вещь занята в указанное время");
-        }
+        validateBookingDates(bookingDto);
+        validateBookingOverlap(bookingDto, item);
         bookingDto.setStatus(BookingStatus.WAITING);
         Booking booking = BookingMapper.toEntity(bookingDto, item, booker);
         bookingRepository.save(booking);
@@ -82,46 +67,80 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingDto> getBookingsByBooker(Long bookerId, String state) {
-        List<Booking> bookings = bookingRepository.findByBookerIdOrderByStartDesc(bookerId);
-        return filterBookingsByState(bookings, state).stream()
+    public List<BookingDto> getBookingsByBooker(Long bookerId, BookingState state) {
+        LocalDateTime now = LocalDateTime.now();
+        List<Booking> bookings = switch (state == null ? BookingState.ALL : state) {
+            case CURRENT ->
+                    bookingRepository.findByBookerIdAndStartTimeBeforeAndEndTimeAfterOrderByStartTimeDesc(bookerId, now, now);
+            case PAST ->
+                    bookingRepository.findByBookerIdAndEndTimeBeforeOrderByStartTimeDesc(bookerId, now);
+            case FUTURE ->
+                    bookingRepository.findByBookerIdAndStartTimeAfterOrderByStartTimeDesc(bookerId, now);
+            case WAITING ->
+                    bookingRepository.findByBookerIdAndStatusOrderByStartTimeDesc(bookerId, BookingStatus.WAITING);
+            case REJECTED ->
+                    bookingRepository.findByBookerIdAndStatusOrderByStartTimeDesc(bookerId, BookingStatus.REJECTED);
+            default ->
+                    bookingRepository.findByBookerIdOrderByStartTimeDesc(bookerId);
+        };
+        return bookings.stream()
                 .map(BookingMapper::toDto)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<BookingDto> getBookingsByOwner(Long ownerId, String state) {
-        List<Booking> bookings = bookingRepository.findByItemOwnerIdOrderByStartDesc(ownerId);
-        return filterBookingsByState(bookings, state).stream()
+    public List<BookingDto> getBookingsByOwner(Long ownerId, BookingState state) {
+        LocalDateTime now = LocalDateTime.now();
+        List<Booking> bookings = switch (state == null ? BookingState.ALL : state) {
+            case CURRENT ->
+                    bookingRepository.findByItemOwnerIdAndStartTimeBeforeAndEndTimeAfterOrderByStartTimeDesc(ownerId, now, now);
+            case PAST ->
+                    bookingRepository.findByItemOwnerIdAndEndTimeBeforeOrderByStartTimeDesc(ownerId, now);
+            case FUTURE ->
+                    bookingRepository.findByItemOwnerIdAndStartTimeAfterOrderByStartTimeDesc(ownerId, now);
+            case WAITING ->
+                    bookingRepository.findByItemOwnerIdAndStatusOrderByStartTimeDesc(ownerId, BookingStatus.WAITING);
+            case REJECTED ->
+                    bookingRepository.findByItemOwnerIdAndStatusOrderByStartTimeDesc(ownerId, BookingStatus.REJECTED);
+            default ->
+                    bookingRepository.findByItemOwnerIdOrderByStartTimeDesc(ownerId);
+        };
+        return bookings.stream()
                 .map(BookingMapper::toDto)
                 .collect(Collectors.toList());
     }
 
-    private List<Booking> filterBookingsByState(List<Booking> bookings, String state) {
-        switch (state == null ? "ALL" : state.toUpperCase()) {
-            case "CURRENT":
-                return bookings.stream()
-                        .filter(b -> b.getStart().isBefore(LocalDateTime.now()) && b.getEnd().isAfter(LocalDateTime.now()))
-                        .collect(Collectors.toList());
-            case "PAST":
-                return bookings.stream()
-                        .filter(b -> b.getEnd().isBefore(LocalDateTime.now()))
-                        .collect(Collectors.toList());
-            case "FUTURE":
-                return bookings.stream()
-                        .filter(b -> b.getStart().isAfter(LocalDateTime.now()))
-                        .collect(Collectors.toList());
-            case "WAITING":
-                return bookings.stream()
-                        .filter(b -> b.getStatus() == BookingStatus.WAITING)
-                        .collect(Collectors.toList());
-            case "REJECTED":
-                return bookings.stream()
-                        .filter(b -> b.getStatus() == BookingStatus.REJECTED)
-                        .collect(Collectors.toList());
-            case "ALL":
-            default:
-                return bookings;
+    // Приватные методы для уменьшения дублирования кода
+
+    private User getUserById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+    }
+
+    private Item getItemById(Long id) {
+        return itemRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Вещь не найдена"));
+    }
+
+    private void validateBookingDates(BookingDto bookingDto) {
+        LocalDateTime start = bookingDto.getStart();
+        LocalDateTime end = bookingDto.getEnd();
+        if (start.equals(end)) {
+            throw new IllegalArgumentException("Время старта не может быть равно времени окончания");
+        }
+        if (start.isBefore(LocalDateTime.now()) || end.isBefore(start)) {
+            throw new IllegalArgumentException("Некорректные даты бронирования");
+        }
+    }
+
+    private void validateBookingOverlap(BookingDto bookingDto, Item item) {
+        List<Booking> overlapping = bookingRepository
+                .findByItemIdAndStatusIn(item.getId(), List.of(BookingStatus.APPROVED, BookingStatus.WAITING))
+                .stream()
+                .filter(b -> bookingDto.getStart().isBefore(b.getEndTime()) && bookingDto.getEnd().isAfter(b.getStartTime()))
+                .toList();
+        if (!overlapping.isEmpty()) {
+            throw new IllegalArgumentException("Вещь занята в указанное время");
         }
     }
 }

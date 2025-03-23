@@ -1,4 +1,4 @@
-package ru.practicum.shareit.item;
+package ru.practicum.shareit.item.comment;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

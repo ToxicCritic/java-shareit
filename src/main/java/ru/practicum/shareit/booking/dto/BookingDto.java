@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import ru.practicum.shareit.booking.BookingStatus;
+import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.user.dto.UserDto;
 
 import java.time.LocalDateTime;
 
@@ -13,14 +15,19 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class BookingDto {
     private Long id;
+
     @NotNull(message = "Начало бронирования не должно быть null")
     private LocalDateTime start;
+
     @NotNull(message = "Конец бронирования не должен быть null")
     private LocalDateTime end;
-    @NotNull(message = "itemId не должен быть null")
+
     private Long itemId;
-    @NotNull(message = "bookerId не должен быть null")
     private Long bookerId;
+
+    private ItemDto item;
+    private UserDto booker;
+
     @NotNull(message = "Статус бронирования не должен быть null")
     private BookingStatus status;
 }

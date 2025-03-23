@@ -20,10 +20,10 @@ public class Booking {
     private Long id;
 
     @Column(name = "start_time", nullable = false)
-    private LocalDateTime start;
+    private LocalDateTime startTime;
 
     @Column(name = "end_time", nullable = false)
-    private LocalDateTime end;
+    private LocalDateTime endTime;
 
     @ManyToOne
     @JoinColumn(name = "item_id", nullable = false)

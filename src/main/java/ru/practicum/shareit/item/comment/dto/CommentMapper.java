@@ -1,6 +1,6 @@
-package ru.practicum.shareit.item.dto;
+package ru.practicum.shareit.item.comment.dto;
 
-import ru.practicum.shareit.item.Comment;
+import ru.practicum.shareit.item.comment.Comment;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.User;
 import java.time.LocalDateTime;
