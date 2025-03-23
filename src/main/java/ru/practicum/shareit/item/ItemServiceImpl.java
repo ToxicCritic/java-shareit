@@ -75,7 +75,7 @@ public class ItemServiceImpl implements ItemService {
                     .orElse(null);
             return ItemMapper.toOwnerDto(item, lastBooking, nextBooking, comments);
         }
-        return ItemMapper.toDto(item, comments);
+        return ItemMapper.toOwnerDto(item, null, null, comments);
     }
 
     @Override
@@ -125,7 +125,7 @@ public class ItemServiceImpl implements ItemService {
                         booking.getEndTime().isBefore(LocalDateTime.now()) &&
                         booking.getStatus() == BookingStatus.APPROVED);
         if (!hasPastBooking) {
-            throw new ForbiddenException("Пользователь не брал вещь в аренду или аренда ещё не завершена");
+            throw new IllegalArgumentException("Пользователь не брал вещь в аренду или аренда ещё не завершена");
         }
         var comment = CommentMapper.toEntity(commentDto, item, author);
         commentRepository.save(comment);

@@ -90,6 +90,10 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public List<BookingDto> getBookingsByOwner(Long ownerId, BookingState state) {
+        List<Item> items = itemRepository.findByOwnerId(ownerId);
+        if (items.isEmpty()) {
+            throw new NotFoundException("Пользователь не имеет вещей, бронирования не найдены");
+        }
         LocalDateTime now = LocalDateTime.now();
         List<Booking> bookings = switch (state == null ? BookingState.ALL : state) {
             case CURRENT ->
