@@ -1,24 +1,14 @@
 package ru.practicum.shareit.booking.dto;
 
 import ru.practicum.shareit.booking.Booking;
-import ru.practicum.shareit.user.User;
+import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.ItemMapper;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.user.User;
+import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.dto.UserMapper;
 
 public class BookingMapper {
-
-    public static BookingDto toDto(Booking booking) {
-        if (booking == null) {
-            return null;
-        }
-        return new BookingDto(
-                booking.getId(),
-                booking.getStart(),
-                booking.getEnd(),
-                booking.getItem() != null ? booking.getItem().getId() : null,
-                booking.getBooker() != null ? booking.getBooker().getId() : null,
-                booking.getStatus()
-        );
-    }
 
     public static Booking toEntity(BookingDto dto, Item item, User booker) {
         if (dto == null) {
@@ -26,11 +16,36 @@ public class BookingMapper {
         }
         Booking booking = new Booking();
         booking.setId(dto.getId());
-        booking.setStart(dto.getStart());
-        booking.setEnd(dto.getEnd());
+        booking.setStartTime(dto.getStart());
+        booking.setEndTime(dto.getEnd());
+        booking.setStatus(dto.getStatus());
         booking.setItem(item);
         booking.setBooker(booker);
-        booking.setStatus(dto.getStatus());
         return booking;
+    }
+
+    public static BookingDto toDto(Booking booking) {
+        if (booking == null) {
+            return null;
+        }
+        BookingDto dto = new BookingDto();
+        dto.setId(booking.getId());
+        dto.setStart(booking.getStartTime());
+        dto.setEnd(booking.getEndTime());
+        dto.setStatus(booking.getStatus());
+        User booker = booking.getBooker();
+        Item item = booking.getItem();
+
+        if (booker != null) {
+            dto.setBookerId(booker.getId());
+            UserDto bookerDto = UserMapper.toDto(booker);
+            dto.setBooker(bookerDto);
+        }
+        if (item != null) {
+            dto.setItemId(item.getId());
+            ItemDto itemDto = ItemMapper.toDto(item);
+            dto.setItem(itemDto);
+        }
+        return dto;
     }
 }
