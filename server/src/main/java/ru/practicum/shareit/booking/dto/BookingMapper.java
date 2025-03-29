@@ -1,7 +1,7 @@
 package ru.practicum.shareit.booking.dto;
 
+import lombok.extern.slf4j.Slf4j;
 import ru.practicum.shareit.booking.Booking;
-import ru.practicum.shareit.booking.BookingStatus;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemMapper;
 import ru.practicum.shareit.item.Item;
@@ -9,6 +9,7 @@ import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.dto.UserMapper;
 
+@Slf4j
 public class BookingMapper {
 
     public static Booking toEntity(BookingDto dto, Item item, User booker) {
@@ -19,9 +20,7 @@ public class BookingMapper {
         booking.setId(dto.getId());
         booking.setStartTime(dto.getStart());
         booking.setEndTime(dto.getEnd());
-        if (dto.getStatus() == null) {
-            booking.setStatus(BookingStatus.WAITING);
-        }
+        booking.setStatus(dto.getStatus());
         booking.setItem(item);
         booking.setBooker(booker);
         return booking;
@@ -35,11 +34,9 @@ public class BookingMapper {
         dto.setId(booking.getId());
         dto.setStart(booking.getStartTime());
         dto.setEnd(booking.getEndTime());
-        if (booking.getStatus() == null) {
-            dto.setStatus(BookingStatus.WAITING);
-        }
         User booker = booking.getBooker();
         Item item = booking.getItem();
+        dto.setStatus(booking.getStatus());
 
         if (booker != null) {
             dto.setBookerId(booker.getId());
