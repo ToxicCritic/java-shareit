@@ -42,7 +42,9 @@ public class BookingServiceImpl implements BookingService {
         }
         validateBookingDates(bookingDto);
         validateBookingOverlap(bookingDto, item);
-        bookingDto.setStatus(BookingStatus.WAITING);
+        if (bookingDto.getStatus() == null) {
+            bookingDto.setStatus(BookingStatus.WAITING);
+        }
 
         Booking booking = BookingMapper.toEntity(bookingDto, item, booker);
         bookingRepository.save(booking);
