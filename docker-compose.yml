@@ -24,8 +24,8 @@ services:
       - db
     environment:
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-      - LOGGING_LEVEL_RU_PRACTICUM_SHAREIT=DEBUG
-      - SPRING_SQL_INIT_MODE=always
+      - LOGGING_LEVEL_RU_PRACTICUM_SHAREIT=INFO
+      - SPRING_SQL_INIT_MODE=never
       - SERVER_PORT=9090
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/shareit
       - SPRING_DATASOURCE_USERNAME=shareit
