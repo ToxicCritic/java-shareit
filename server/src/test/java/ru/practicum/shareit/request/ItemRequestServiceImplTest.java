@@ -1,20 +1,20 @@
 package ru.practicum.shareit.request;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
+
 import ru.practicum.shareit.exception.NotFoundException;
-import ru.practicum.shareit.item.ItemRepository;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
 import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.UserRepository;
-
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
 @Transactional
@@ -30,7 +30,7 @@ class ItemRequestServiceImplTest {
     private UserRepository userRepository;
 
     @Autowired
-    private ItemRepository itemRepository;
+    private ru.practicum.shareit.item.ItemRepository itemRepository;
 
     private User requestor;
     private User otherUser;
@@ -49,9 +49,10 @@ class ItemRequestServiceImplTest {
     }
 
     @Test
-    void testCreateRequest() {
+    void testCreateRequest_success() {
         ItemRequestDto requestDto = new ItemRequestDto();
         requestDto.setDescription("Нужна вещь для теста");
+
         ItemRequestDto created = requestService.createRequest(requestor.getId(), requestDto);
         assertThat(created).isNotNull();
         assertThat(created.getId()).isNotNull();
@@ -61,8 +62,15 @@ class ItemRequestServiceImplTest {
     }
 
     @Test
-    void testGetUserRequests() {
-        // Создаем два запроса
+    void testCreateRequest_userNotFound() {
+        ItemRequestDto requestDto = new ItemRequestDto();
+        requestDto.setDescription("Запрос без существующего пользователя");
+        Exception ex = assertThrows(NotFoundException.class, () -> requestService.createRequest(999L, requestDto));
+        assertThat(ex.getMessage()).contains("Пользователь не найден");
+    }
+
+    @Test
+    void testGetUserRequests_success() {
         ItemRequestDto req1 = new ItemRequestDto();
         req1.setDescription("Запрос 1");
         requestService.createRequest(requestor.getId(), req1);
@@ -77,10 +85,10 @@ class ItemRequestServiceImplTest {
     }
 
     @Test
-    void testGetAllRequests() {
-        ItemRequestDto req = new ItemRequestDto();
-        req.setDescription("Запрос от requestor");
-        requestService.createRequest(requestor.getId(), req);
+    void testGetAllRequests_success() {
+        ItemRequestDto reqRequestor = new ItemRequestDto();
+        reqRequestor.setDescription("Запрос от requestor");
+        requestService.createRequest(requestor.getId(), reqRequestor);
 
         ItemRequestDto reqOther = new ItemRequestDto();
         reqOther.setDescription("Запрос от другого пользователя");
@@ -92,7 +100,7 @@ class ItemRequestServiceImplTest {
     }
 
     @Test
-    void testGetRequestById() {
+    void testGetRequestById_success() {
         ItemRequestDto req = new ItemRequestDto();
         req.setDescription("Запрос для получения");
         ItemRequestDto created = requestService.createRequest(requestor.getId(), req);
@@ -103,7 +111,7 @@ class ItemRequestServiceImplTest {
     }
 
     @Test
-    void testGetRequestByIdUserNotFound() {
+    void testGetRequestById_userNotFound() {
         Exception ex = assertThrows(NotFoundException.class, () ->
                 requestService.getRequestById(999L, 1L));
         assertThat(ex.getMessage()).contains("Пользователь не найден");

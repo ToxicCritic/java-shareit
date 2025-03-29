@@ -182,7 +182,7 @@ public class BookingServiceImpl implements BookingService {
             log.warn("Booking start={} equals end={}. Throwing exception.", start, end);
             throw new IllegalArgumentException("Время старта не может быть равно времени окончания");
         }
-        if (start.isBefore(LocalDateTime.now()) || end.isBefore(start)) {
+        if (end.isBefore(start)) {
             log.warn("Dates are incorrect: start={}, end={}. Throwing exception.", start, end);
             throw new IllegalArgumentException("Некорректные даты бронирования");
         }
