@@ -166,7 +166,7 @@ public class ItemServiceImpl implements ItemService {
         boolean hasPastBooking = bookingRepository.findByBookerIdOrderByStartTimeDesc(userId).stream()
                 .anyMatch(booking ->
                         booking.getItem().getId().equals(itemId) &&
-                        booking.getEndTime().isBefore(LocalDateTime.now().plusSeconds(5)) &&
+                        booking.getEndTime().isBefore(LocalDateTime.now()) &&
                         booking.getStatus() == BookingStatus.APPROVED);
         if (!hasPastBooking) {
             log.warn("User {} has no past approved bookings for item {}. Throwing exception.", userId, itemId);
