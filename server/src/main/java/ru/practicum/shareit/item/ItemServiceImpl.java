@@ -19,7 +19,6 @@ import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.UserRepository;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -163,7 +162,7 @@ public class ItemServiceImpl implements ItemService {
 
         Item item = getItemById(itemId);
         User author = getUserById(userId);
-        LocalDateTime now = LocalDateTime.now(ZoneId.of("Europe/Moscow"));
+        LocalDateTime now = LocalDateTime.now();
 
         List<Booking> bookings = bookingRepository.findByBookerIdAndItemIdAndStatus(userId, itemId, BookingStatus.APPROVED);
         boolean hasPastBooking = bookings.stream()
