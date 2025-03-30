@@ -19,6 +19,7 @@ import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.UserRepository;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -162,12 +163,12 @@ public class ItemServiceImpl implements ItemService {
 
         Item item = getItemById(itemId);
         User author = getUserById(userId);
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("Europe/Moscow"));
 
-        boolean hasPastBooking = bookingRepository.findByBookerIdOrderByStartTimeDesc(userId).stream()
-                .anyMatch(booking ->
-                        booking.getItem().getId().equals(itemId) &&
-                        booking.getEndTime().isBefore(LocalDateTime.now()) &&
-                        booking.getStatus() == BookingStatus.APPROVED);
+        List<Booking> bookings = bookingRepository.findByBookerIdAndItemIdAndStatus(userId, itemId, BookingStatus.APPROVED);
+        boolean hasPastBooking = bookings.stream()
+                .anyMatch(booking -> booking.getEndTime().isBefore(now));
+
         if (!hasPastBooking) {
             log.warn("User {} has no past approved bookings for item {}. Throwing exception.", userId, itemId);
             throw new IllegalArgumentException("Пользователь не брал вещь в аренду или аренда ещё не завершена");
